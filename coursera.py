@@ -1,7 +1,8 @@
 from random import sample
 from lxml import etree
-import requests
 from bs4 import BeautifulSoup
+from openpyxl import Workbook
+import requests
 
 
 def get_web_page(url, payload=None):
@@ -36,7 +37,7 @@ def get_course_info(course_slug):
     course_info = {}
     course_info['title'] = soup.find('h1', class_='title').string
     start_date = soup.find('div', class_='startdate').string
-    course_info['start_date'] = start_date.split(maxsplit=1)[1]
+    course_info['starting_date'] = start_date.split(maxsplit=1)[1]
     languages = soup.find('div', class_='language-info').text
     course_info['language'] = languages.split(',')[0]
     course_info['duration_in_weeks'] = len(soup.find_all('div', class_='week'))
@@ -44,15 +45,26 @@ def get_course_info(course_slug):
     if rating_tag:
         course_info['rating'] = rating_tag.string.split()[0]
     else:
-        course_info['rating'] = None
+        course_info['rating'] = 'No rating'
     return course_info
 
 
-def output_courses_info_to_xlsx(courses_info, filepath=''):
-    info = 'title: %s\nstart_date: %s\nlanguage: %s\nduration: %s\nrating: %s'
-    for course in courses_info:
-        print(info % (course['title'], course['start_date'], course['language'],
-                      course['duration_in_weeks'], course['rating']))
+def output_courses_info_to_xlsx(courses_info, filepath='coursera_courses.xlsx'):
+    excel_book = Workbook()
+    sheet = excel_book.active
+    sheet.title = 'Coursera'
+    sheet['A1'] = 'Course title'
+    sheet['B1'] = 'Starting date'
+    sheet['C1'] = 'Language'
+    sheet['D1'] = 'Duration (weeks)'
+    sheet['E1'] = 'Rating'
+    for row, course in enumerate(courses_info):
+        sheet.cell(row=row + 2, column=1, value=course['title'])
+        sheet.cell(row=row + 2, column=2, value=course['starting_date'])
+        sheet.cell(row=row + 2, column=3, value=course['language'])
+        sheet.cell(row=row + 2, column=4, value=course['duration_in_weeks'])
+        sheet.cell(row=row + 2, column=5, value=course['rating'])
+    excel_book.save(filepath)
 
 
 if __name__ == '__main__':
