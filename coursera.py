@@ -2,6 +2,7 @@ from random import sample
 from lxml import etree
 from bs4 import BeautifulSoup
 from openpyxl import Workbook
+from argparse import ArgumentParser
 import requests
 
 
@@ -19,7 +20,7 @@ def get_courses_list(xml_text):
     return courses_list
 
 
-def get_random_elements_from_list(list_elements, count_random_elements=20):
+def get_random_elements_from_list(list_elements, count_random_elements=5):
     return sample(list_elements, count_random_elements)
 
 
@@ -67,10 +68,21 @@ def output_courses_info_to_xlsx(courses_info, filepath='coursera_courses.xlsx'):
     excel_book.save(filepath)
 
 
+def get_program_args():
+    parser = ArgumentParser(description='Finding coursera courses info')
+    parser.add_argument('--count_courses', type=int, default=20,
+                        help='Count required courses')
+    parser.add_argument('--excel_file', type=str, default='coursera_courses.xlsx',
+                        help='Path to output excel file')
+    args = parser.parse_args()
+    return args.count_courses, args.excel_file
+
+
 if __name__ == '__main__':
     coursera_courses_url = 'https://www.coursera.org/sitemap~www~courses.xml'
+    count_courses, output_excel_file = get_program_args()
     xml_text = get_web_page(coursera_courses_url)
     courses_list = get_courses_list(xml_text)
-    random_courses_list = get_random_elements_from_list(courses_list, 3)
+    random_courses_list = get_random_elements_from_list(courses_list, count_courses)
     coursera_courses_info = find_coursera_courses_info(random_courses_list)
-    output_courses_info_to_xlsx(coursera_courses_info)
+    output_courses_info_to_xlsx(coursera_courses_info, output_excel_file)
