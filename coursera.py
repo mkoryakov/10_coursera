@@ -6,6 +6,9 @@ from argparse import ArgumentParser
 import requests
 
 
+COURSERA_COURSES_URL = 'https://www.coursera.org/sitemap~www~courses.xml'
+
+
 def get_web_page(url, payload=None):
     return requests.get(url, payload).text
 
@@ -13,44 +16,34 @@ def get_web_page(url, payload=None):
 def get_courses_list(xml_text):
     xml_bytes_text = bytes(xml_text, encoding='utf-8')
     xml = etree.XML(xml_bytes_text)
-    courses_list = []
-    for element in xml.iter('*'):
-        if element.text.rstrip():
-            courses_list.append(element.text)
-    return courses_list
+    return [element.text for element in xml.iter('*') if element.text.rstrip()]
 
 
 def get_random_elements_from_list(list_elements, count_random_elements=5):
     return sample(list_elements, count_random_elements)
 
 
-def find_coursera_courses_info(courses_urls):
-    courses_info = []
-    for url in courses_urls:
-        html_page = get_web_page(url)
-        course_info = get_course_info(html_page)
-        courses_info.append(course_info)
-    return courses_info
-
-
 def get_course_info(course_slug):
     soup = BeautifulSoup(course_slug, 'html.parser')
-    course_info = {}
-    course_info['title'] = soup.find('h1', class_='title').string
+    title = soup.find('h1', class_='title').string
     start_date = soup.find('div', class_='startdate').string
-    course_info['starting_date'] = start_date.split(maxsplit=1)[1]
+    starting_date = start_date.split(maxsplit=1)[1]
     languages = soup.find('div', class_='language-info').text
-    course_info['language'] = languages.split(',')[0]
-    course_info['duration_in_weeks'] = len(soup.find_all('div', class_='week'))
+    language = languages.split(',')[0]
+    duration_in_weeks = len(soup.find_all('div', class_='week'))
     rating_tag = soup.find('div', class_='ratings-text')
-    if rating_tag:
-        course_info['rating'] = rating_tag.string.split()[0]
+    if rating_tag and rating_tag.string:
+        rating = rating_tag.string.split()[0]
     else:
-        course_info['rating'] = 'No rating'
-    return course_info
+        rating = 'No rating'
+    return {'title': title,
+            'starting_date': starting_date,
+            'language': language,
+            'duration_in_weeks': duration_in_weeks,
+            'rating': rating}
 
 
-def output_courses_info_to_xlsx(courses_info, filepath='coursera_courses.xlsx'):
+def get_excel_book_with_courses_info(courses_info):
     excel_book = Workbook()
     sheet = excel_book.active
     sheet.title = 'Coursera'
@@ -59,12 +52,16 @@ def output_courses_info_to_xlsx(courses_info, filepath='coursera_courses.xlsx'):
     sheet['C1'] = 'Language'
     sheet['D1'] = 'Duration (weeks)'
     sheet['E1'] = 'Rating'
-    for row, course in enumerate(courses_info):
-        sheet.cell(row=row + 2, column=1, value=course['title'])
-        sheet.cell(row=row + 2, column=2, value=course['starting_date'])
-        sheet.cell(row=row + 2, column=3, value=course['language'])
-        sheet.cell(row=row + 2, column=4, value=course['duration_in_weeks'])
-        sheet.cell(row=row + 2, column=5, value=course['rating'])
+    for row, course in enumerate(courses_info, 2):
+        sheet.cell(row=row, column=1, value=course['title'])
+        sheet.cell(row=row, column=2, value=course['starting_date'])
+        sheet.cell(row=row, column=3, value=course['language'])
+        sheet.cell(row=row, column=4, value=course['duration_in_weeks'])
+        sheet.cell(row=row, column=5, value=course['rating'])
+    return excel_book
+
+
+def output_courses_info_to_xlsx(excel_book, filepath):
     excel_book.save(filepath)
 
 
@@ -79,10 +76,13 @@ def get_program_args():
 
 
 if __name__ == '__main__':
-    coursera_courses_url = 'https://www.coursera.org/sitemap~www~courses.xml'
     count_courses, output_excel_file = get_program_args()
-    xml_text = get_web_page(coursera_courses_url)
+    xml_text = get_web_page(COURSERA_COURSES_URL)
     courses_list = get_courses_list(xml_text)
-    random_courses_list = get_random_elements_from_list(courses_list, count_courses)
-    coursera_courses_info = find_coursera_courses_info(random_courses_list)
-    output_courses_info_to_xlsx(coursera_courses_info, output_excel_file)
+    random_courses_list = get_random_elements_from_list(courses_list,
+                                                        count_courses)
+    html_pages = [get_web_page(url) for url in random_courses_list]
+    coursera_courses_info = [get_course_info(html_page)
+                             for html_page in html_pages]
+    excel_book = get_excel_book_with_courses_info(coursera_courses_info)
+    output_courses_info_to_xlsx(excel_book, output_excel_file)
