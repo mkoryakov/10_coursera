@@ -8,6 +8,7 @@
 
     $ python coursera.py --excel_file coursera.xlsx --count_courses 14
 В результате работы скрипта появится сообщение, в котором указано имя файла с информацией о найденных курсах:
+
     Information about courses is saved in the file coursera.xlsx
 
 # Project Goals
