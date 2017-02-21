@@ -7,6 +7,8 @@
 `count_courses` - количество курсов (значение по умолчанию _20_), информация о которых будет выведена в файл `excel_file` (значение по умолчанию _coursera\_courses.xlsx_)
 
     $ python coursera.py --excel_file coursera.xlsx --count_courses 14
+В результате работы скрипта появится сообщение, в котором указано имя файла с информацией о найденных курсах:
+    Information about courses is saved in the file coursera.xlsx
 
 # Project Goals
 

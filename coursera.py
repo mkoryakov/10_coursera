@@ -63,6 +63,7 @@ def get_excel_book_with_courses_info(courses_info):
 
 def output_courses_info_to_xlsx(excel_book, filepath):
     excel_book.save(filepath)
+    print('Information about courses is saved in the file %s' % filepath)
 
 
 def get_program_args():
