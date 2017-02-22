@@ -16,7 +16,7 @@ def get_web_page(url, payload=None):
 def get_courses_list(xml_text):
     xml_bytes_text = bytes(xml_text, encoding='utf-8')
     xml = etree.XML(xml_bytes_text)
-    return [element.text for element in xml.iter('*') if element.text.rstrip()]
+    return [link.text for link in xml.iter('{*}loc')]
 
 
 def get_random_elements_from_list(list_elements, count_random_elements=5):
