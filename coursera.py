@@ -19,12 +19,8 @@ def get_courses_list(xml_text):
     return [link.text for link in xml.iter('{*}loc')]
 
 
-def get_random_elements_from_list(list_elements, count_random_elements=5):
-    return sample(list_elements, count_random_elements)
-
-
-def get_course_info(course_slug):
-    soup = BeautifulSoup(course_slug, 'html.parser')
+def get_course_info(html_page):
+    soup = BeautifulSoup(html_page, 'html.parser')
     title = soup.find('h1', class_='title').string
     start_date = soup.find('div', class_='startdate').string
     starting_date = start_date.split(maxsplit=1)[1]
@@ -35,7 +31,7 @@ def get_course_info(course_slug):
     if rating_tag and rating_tag.string:
         rating = rating_tag.string.split()[0]
     else:
-        rating = 'No rating'
+        rating = None
     return {'title': title,
             'starting_date': starting_date,
             'language': language,
@@ -57,13 +53,15 @@ def get_excel_book_with_courses_info(courses_info):
         sheet.cell(row=row, column=2, value=course['starting_date'])
         sheet.cell(row=row, column=3, value=course['language'])
         sheet.cell(row=row, column=4, value=course['duration_in_weeks'])
-        sheet.cell(row=row, column=5, value=course['rating'])
+        if course['rating']:
+            sheet.cell(row=row, column=5, value=course['rating'])
+        else:
+            sheet.cell(row=row, column=5, value='No rating')
     return excel_book
 
 
 def output_courses_info_to_xlsx(excel_book, filepath):
     excel_book.save(filepath)
-    print('Information about courses is saved in the file %s' % filepath)
 
 
 def get_program_args():
@@ -80,10 +78,10 @@ if __name__ == '__main__':
     count_courses, output_excel_file = get_program_args()
     xml_text = get_web_page(COURSERA_COURSES_URL)
     courses_list = get_courses_list(xml_text)
-    random_courses_list = get_random_elements_from_list(courses_list,
-                                                        count_courses)
+    random_courses_list = sample(courses_list, count_courses)
     html_pages = [get_web_page(url) for url in random_courses_list]
     coursera_courses_info = [get_course_info(html_page)
                              for html_page in html_pages]
     excel_book = get_excel_book_with_courses_info(coursera_courses_info)
     output_courses_info_to_xlsx(excel_book, output_excel_file)
+    print('Information about courses is saved in the file %s' % output_excel_file)
